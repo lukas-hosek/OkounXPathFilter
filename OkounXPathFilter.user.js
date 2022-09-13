@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         echelon's xpath filter
 // @namespace    http://tampermonkey.net/
-// @version      0.2
+// @version      0.3
 // @description  try to take over the world!
 // @author       You
 // @match        https://www.okoun.cz/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=okoun.cz
+// @downloadURL  https://raw.githubusercontent.com/lukas-hosek/OkounXPathFilter/main/OkounXPathFilter.user.js#bypass=true
 // @updateURL    https://raw.githubusercontent.com/lukas-hosek/OkounXPathFilter/main/OkounXPathFilter.user.js#bypass=true
 // @grant        none
 // ==/UserScript==
