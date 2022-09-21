@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         echelon's xpath filter
 // @namespace    http://tampermonkey.net/
-// @version      0.5
+// @version      0.6
 // @description  blocks and deletes unwanted posts from okoun.cz
 // @author       echelon
 // @match        https://www.okoun.cz/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=okoun.cz
-// @downloadURL  https://github.com/lukas-hosek/OkounXPathFilter/raw/main/OkounAdminXPathFilter.user.js
+// @downloadURL  https://github.com/lukas-hosek/OkounXPathFilter/raw/main/OkounXPathFilter.user.js
 // @updateURL    https://github.com/lukas-hosek/OkounXPathFilter/raw/main/OkounAdminXPathFilter.user.js
 // @grant        GM_setValue
 // @grant        GM_getValue
