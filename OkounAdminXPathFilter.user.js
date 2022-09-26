@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Echelonův filtr
 // @namespace    http://tampermonkey.net/
-// @version      0.7
+// @version      0.8
 // @description  blocks and deletes unwanted posts from okoun.cz
 // @author       echelon
 // @match        https://www.okoun.cz/*
@@ -173,12 +173,12 @@ async function parseBanList(response)
 }
 
 
-function updateBanList()
+function updateBanList(force)
 {
   	let updateTimestamp = parseInt(GMC.getValue("updateTimestamp", 0));
     let currentTimestamp = Date.now();
   	let updateInterval = 1 * 60 * 60 * 1000;
-    if (updateTimestamp + updateInterval > currentTimestamp)
+    if (updateTimestamp + updateInterval > currentTimestamp && !force)
     {
         // List is sufficiently up to date
       return;
@@ -231,6 +231,15 @@ function addTextArea(name, defaultVal, pluginNode)
     pluginNode.append(textArea);
 }
 
+function addButton(name, callback, pluginNode)
+{
+    let button = document.createElement("button");
+    button.innerText = name;
+    button.type = "button";
+    button.addEventListener("click", callback);
+    pluginNode.append(button);
+}
+
 function addPluginSettings(pluginNode)
 {
     let title = document.createElement("div");
@@ -240,6 +249,8 @@ function addPluginSettings(pluginNode)
     addCheckbox("Schovávat", true, pluginNode);
     pluginNode.append(document.createElement("br"));
     addCheckbox("Mazat", true, pluginNode);
+    pluginNode.append(document.createElement("br"));
+    addButton("Zkontrolovat aktualizace banlistu", event => updateBanList(true), pluginNode);
     pluginNode.append(document.createElement("br"));
     addTextArea("Vlastní filtr", "testovaci.kakes", pluginNode);
 }
@@ -268,5 +279,5 @@ function addPluginSettings(pluginNode)
 
     addPluginSettings(getPluginWidgetNode());
 
-    updateBanList();
+    updateBanList(false);
 })();
