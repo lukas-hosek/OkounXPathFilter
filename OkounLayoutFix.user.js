@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Okoun layout fix
 // @namespace    http://tampermonkey.net/
-// @version      0.2
+// @version      0.3
 // @description  try to take over the world!
 // @author       echelon
 // @match        https://www.okoun.cz/*
@@ -43,6 +43,13 @@ function getPluginWidgetNode()
 {
     let pluginWidget = document.getElementById("pluginWidget");
     return pluginWidget ? pluginWidget : createPluginWidget();
+}
+
+// Configuration support functions
+
+function onCheckboxToggle(confName, value)
+{
+    GMC.setValue(confName, value ? "true" : "false");
 }
 
 function addCheckbox(name, defaultVal, pluginNode)
@@ -89,8 +96,6 @@ function addPluginSettings(pluginNode)
     {
         layoutUnbreak();
     }
-
-    layoutUnbreak();
 
     addPluginSettings(getPluginWidgetNode());
 })();
