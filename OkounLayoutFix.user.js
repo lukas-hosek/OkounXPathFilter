@@ -1,11 +1,13 @@
 // ==UserScript==
 // @name         Okoun layout fix
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.2
 // @description  try to take over the world!
 // @author       echelon
 // @match        https://www.okoun.cz/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=okoun.cz
+// @downloadURL  https://github.com/lukas-hosek/OkounXPathFilter/raw/main/OkounLayoutFix.user.js
+// @updateURL    https://github.com/lukas-hosek/OkounXPathFilter/raw/main/OkounLayoutFix.user.js
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @require      https://github.com/StigNygaard/GMCommonAPI.js/raw/master/GMCommonAPI.js
