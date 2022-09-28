@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Echelonův filtr
 // @namespace    http://tampermonkey.net/
-// @version      0.8
+// @version      0.9
 // @description  blocks and deletes unwanted posts from okoun.cz
 // @author       echelon
 // @match        https://www.okoun.cz/*
@@ -212,7 +212,6 @@ function addCheckbox(name, defaultVal, pluginNode)
     checkBox.addEventListener("change", event => onCheckboxToggle(name, event.target.checked));
     pluginNode.append(checkBox);
     pluginNode.append(document.createTextNode(name));
-
 }
 
 function onTextAreaChange(confName, value)
@@ -246,14 +245,20 @@ function addPluginSettings(pluginNode)
     title.innerText = "Echelonův filtr";
     pluginNode.append(title);
 
+    addButton("Zkontrolovat aktualizace banlistu", event => updateBanList(true), pluginNode);
+    pluginNode.append(document.createElement("br"));
     addCheckbox("Schovávat", true, pluginNode);
     pluginNode.append(document.createElement("br"));
     addCheckbox("Mazat", true, pluginNode);
     pluginNode.append(document.createElement("br"));
-    addButton("Zkontrolovat aktualizace banlistu", event => updateBanList(true), pluginNode);
+    pluginNode.append(document.createTextNode("\xa0\xa0"));
+    addCheckbox("I z vlastního filtru ⚠️", false, pluginNode);
     pluginNode.append(document.createElement("br"));
+
     addTextArea("Vlastní filtr", "testovaci.kakes", pluginNode);
 }
+
+
 
 (function() {
     'use strict';
@@ -265,9 +270,11 @@ function addPluginSettings(pluginNode)
 
     let filteringEnabled = GMC.getValue("Schovávat", "true") == "true";
     let deletingEnabled = GMC.getValue("Mazat", "true") == "true";
+    let customDeletingEnabled = GMC.getValue("I z vlastního filtru ⚠️", "false") == "true";
 
     if (deletingEnabled)
     {
+        let array = customDeletingEnabled ? banArray.concat(customBanArray) : banArray;
         deletePosts(banArray);
     }
     if (filteringEnabled)
