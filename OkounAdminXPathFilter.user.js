@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         Echelonův filtr
 // @namespace    http://tampermonkey.net/
-// @version      0.9
+// @version      0.10
 // @description  blocks and deletes unwanted posts from okoun.cz
 // @author       echelon
 // @match        https://www.okoun.cz/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=okoun.cz
 // @downloadURL  https://github.com/lukas-hosek/OkounXPathFilter/raw/main/OkounAdminXPathFilter.user.js
 // @updateURL    https://github.com/lukas-hosek/OkounXPathFilter/raw/main/OkounAdminXPathFilter.user.js
+// @run-at       document-end
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @require      https://github.com/StigNygaard/GMCommonAPI.js/raw/master/GMCommonAPI.js
@@ -275,7 +276,7 @@ function addPluginSettings(pluginNode)
     if (deletingEnabled)
     {
         let array = customDeletingEnabled ? banArray.concat(customBanArray) : banArray;
-        deletePosts(banArray);
+        deletePosts(array);
     }
     if (filteringEnabled)
     {
