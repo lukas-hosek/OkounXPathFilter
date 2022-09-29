@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Echelonův filtr
 // @namespace    http://tampermonkey.net/
-// @version      0.10
+// @version      0.12
 // @description  blocks and deletes unwanted posts from okoun.cz
 // @author       echelon
 // @match        https://www.okoun.cz/*
@@ -15,7 +15,8 @@
 // ==/UserScript==
 
 
-const defaultBanList = 'adijunkt, Bernhard_Weiss, bmn, Brandenburg, Bloodrot, Branimir, bretislav.jonas, d.smiricky, Dagobert_Durr, Das_Reich, florian_geyer, frantisek.kachna, Gotz_Berlichingen, Hajny_Filiburg, hamacek, Handschar, Hilfswilliger, horacek, Horst_Wessel, Charlemagne, Charlemagne_, Isidor, Januar, jarda.dusek, jasanek, Jurij_Ozerov, Kama, Karstjager, Koprovka, Knour, Kpt_Tuma, Landstorm_Netherland, Langemarck, Laser_eye, Lutzow, maqeo.cz, Maria_Theresia, mazurek, mazanej_lucifer, Mudrford, Neknubak, Nibelungen, Nord_, Norland, OberSturmKlippFurher, Oblazek, piANistka, Plch, Plsik_Liskovy, Polizei, pixicz, Prinz_Eugen, profesor_Birkermaier, Protez_alpska, prucha, ritna.diera, vojin.kouba, vonavka, Wallonien, Zufanek';
+const defaultBlackList = 'adijunkt, Bernhard_Weiss, bmn, Brandenburg, Bloodrot, Branimir, bretislav.jonas, d.smiricky, Dagobert_Durr, Das_Reich, florian_geyer, frantisek.kachna, Gotz_Berlichingen, Hajny_Filiburg, hamacek, Handschar, Hilfswilliger, horacek, Horst_Wessel, Charlemagne, Charlemagne_, Isidor, Januar, jarda.dusek, jasanek, Jurij_Ozerov, Kama, Karstjager, Koprovka, Knour, Kpt_Tuma, Landstorm_Netherland, Langemarck, Laser_eye, Lutzow, maqeo.cz, Maria_Theresia, mazurek, mazanej_lucifer, Mudrford, Neknubak, Nibelungen, Nord_, Norland, OberSturmKlippFurher, Oblazek, piANistka, Plch, Plsik_Liskovy, Polizei, pixicz, Prinz_Eugen, profesor_Birkermaier, Protez_alpska, prucha, ritna.diera, vojin.kouba, vonavka, Wallonien, Zufanek';
+const defaultRegexList = 'kouba$';
 
 // Plugin registration
 
@@ -61,31 +62,36 @@ function getPluginWidgetNode()
 
 // The filter code itself
 
-function deletePosts(banList)
+function deletePosts(blackList)
 {
-    // Construct xpath query, selects all delete checkboxes in posts by users in the ban list
-    let xPath = "//div[@class='meta']/span[@class='user' and (text() = '" + banList[0] + "'";
-    for (let i = 1; i < banList.length; ++i)
-    {
-        xPath += " or text() = '" + banList[i] + "'";
-    }
-    xPath += ")]/../span[@class='delete']/input";
+    let regexString = "(" + blackList.join("|")+")";
+    let regex = new RegExp(regexString, "i");
 
-    let xPathResult = document.evaluate(xPath, document.body, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-
-    if (xPathResult.snapshotLength > 0)
+    let selectedPosts = 0;
+    for (let span of document.querySelectorAll("span.user"))
     {
-        // Click all checkboxes
-        for (let i = 0; i < xPathResult.snapshotLength; ++i)
+        if (regex.test(span.innerText))
         {
-            let checkbox = xPathResult.snapshotItem(i);
-            checkbox.click();
+            let div = span.parentNode.parentNode;
+            let checkboxes = div.getElementsByTagName("input")
+            for (let checkbox of checkboxes)
+            {
+                if (checkbox.type != "checkbox")
+                {
+                    continue;
+                }
+                checkbox.checked = true;
+                ++selectedPosts;
+            }
         }
-
+    }
+    if (selectedPosts > 0)
+    {
         let xPathDeleteForm = "//form[@name='markArticlesForm' or @name='markMessagesForm']";
         let deleteForm = document.evaluate(xPathDeleteForm, document.body, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
         if (deleteForm)
         {
+            console.log(`Deleting ${selectedPosts} posts`);
             // Create an invisible iframe in which the deletion form will be executed
             let docBody = document.getElementById("body");
             let iframe = document.createElement("iframe");
@@ -104,48 +110,28 @@ function deletePosts(banList)
 }
 
 
-function stopImages(banList)
+function hidePostsRegex(blackList)
 {
-    // Construct xpath query, selects all imgs in posts posted by people in the ban list
-    //let xPath = '//span[@class=\'user\' and (text() = \'' + banList[0] + '\'';
-    let xPath = "//span[@class='user' and (text() = '" + banList[0] + "'";
-    for (let i = 1; i < banList.length; ++i)
-    {
-        xPath += " or text() = '" + banList[i] + "'";
-    }
-    xPath += ")]/../..//img";
-    let xPathResult = document.evaluate(xPath, document.body, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    let regexString = "(" + blackList.join("|")+")";
+    let regex = new RegExp(regexString, "i");
 
-    // Set img.src to an empty string to stop loading. Works in Firefox.
-    for (let i = xPathResult.snapshotLength-1; i >= 0; --i)
+    for (let span of document.querySelectorAll("span.user"))
     {
-        let elem = xPathResult.snapshotItem(i);
-        elem.src='';
+        if (regex.test(span.innerText))
+        {
+            let div = span.parentNode.parentNode;
+            let imgs = div.getElementsByTagName("img")
+            for (let img of imgs)
+            {
+                img.src="";
+            }
+            div.parentNode.removeChild(div);
+        }
     }
 }
 
 
-function hidePosts(banList)
-{
-    // Construct xpath query, selects all divs that contain <span class='user'>ultradebil</span>
-    let xPath = "//span[@class='user' and (text() = '" + banList[0] + "'";
-    for (let i = 1; i < banList.length; ++i)
-    {
-        xPath += " or text() = '" + banList[i] + "'";
-    }
-    xPath += ")]/../..";
-
-    let xPathResult = document.evaluate(xPath, document.body, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-
-    // delete all found divs, starting with oldest so that we don't invalidate newer query results
-    for (let i = xPathResult.snapshotLength-1; i >= 0; --i)
-    {
-        let elem = xPathResult.snapshotItem(i);
-        elem.parentNode.removeChild(elem);
-    }
-}
-
-async function parseBanList(response)
+async function parseBlackList(response)
 {
     if (!response.ok)
     {
@@ -159,22 +145,33 @@ async function parseBanList(response)
         return;
     }
     let xdata = doc.getElementsByClassName("xdata");
-    if (xdata.length != 1)
+    let usersArray = [];
+    let patternsArray = [];
+    if (xdata.length == 1)
     {
-        return;
+        usersArray = xdata[0].textContent.split(", ");
+        if (usersArray.length > 2)
+        {
+            GMC.setValue("bannedUsers", xdata[0].textContent);
+        }
+
     }
-    let banArray = xdata[0].textContent.split(", ");
-    if (banArray.length < 5)
+    let regexdata = doc.getElementsByClassName("regexdata");
+    if (regexdata.length == 1)
     {
-        // just a sanity check
-        return;
+        patternsArray = regexdata[0].title.split(", ");
+        if (patternsArray.length > 2)
+        {
+            GMC.setValue("bannedPatterns", regexdata[0].title);
+        }
+
     }
-    GMC.setValue("bannedUsers", xdata[0].textContent);
-    console.log(`Banlist updated, ${banArray.length} records`);
+
+    console.log(`Blacklist updated, ${usersArray.length} records, ${patternsArray.length} patterns`);
 }
 
 
-function updateBanList(force)
+function updateBlackList(force)
 {
   	let updateTimestamp = parseInt(GMC.getValue("updateTimestamp", 0));
     let currentTimestamp = Date.now();
@@ -186,14 +183,35 @@ function updateBanList(force)
     }
     GMC.setValue("updateTimestamp", currentTimestamp);
 
-    fetch("https://www.okoun.cz/boards/seznam_parazitu").then(res => parseBanList(res));
+    fetch("https://www.okoun.cz/boards/seznam_parazitu").then(res => parseBlackList(res));
 }
 
 
 function userListToArray(userList)
 {
-    let userArray = userList.split(",");
-    return userArray.map(str => str.trim());
+    if (userList.trim().length > 0)
+    {
+        let userArray = userList.split(",");
+        return userArray.map(str => str.trim());
+    }
+    else
+    {
+        return [];
+    }
+}
+
+
+function userListToRegexArray(userList)
+{
+    if (userList.trim().length > 0)
+    {
+        let userArray = userList.split(",");
+        return userArray.map(str => "^" + str.trim().replace(".", "\.") + "$");
+    }
+    else
+    {
+        return [];
+    }
 }
 
 
@@ -215,11 +233,12 @@ function addCheckbox(name, defaultVal, pluginNode)
     pluginNode.append(document.createTextNode(name));
 }
 
+
 function onTextAreaChange(confName, value)
 {
-    console.log(value);
     GMC.setValue(confName, value);
 }
+
 
 function addTextArea(name, defaultVal, pluginNode)
 {
@@ -231,6 +250,7 @@ function addTextArea(name, defaultVal, pluginNode)
     pluginNode.append(textArea);
 }
 
+
 function addButton(name, callback, pluginNode)
 {
     let button = document.createElement("button");
@@ -240,13 +260,14 @@ function addButton(name, callback, pluginNode)
     pluginNode.append(button);
 }
 
+
 function addPluginSettings(pluginNode)
 {
     let title = document.createElement("div");
     title.innerText = "Echelonův filtr";
     pluginNode.append(title);
 
-    addButton("Zkontrolovat aktualizace banlistu", event => updateBanList(true), pluginNode);
+    addButton("Zkontrolovat aktualizace banlistu", event => updateBlackList(true), pluginNode);
     pluginNode.append(document.createElement("br"));
     addCheckbox("Schovávat", true, pluginNode);
     pluginNode.append(document.createElement("br"));
@@ -264,10 +285,13 @@ function addPluginSettings(pluginNode)
 (function() {
     'use strict';
 
-    let banList = GMC.getValue("bannedUsers", defaultBanList);
-    let banArray = userListToArray(banList);
-    let customBanList = GMC.getValue("Vlastní filtr", "testovaci.kakes");
-    let customBanArray = userListToArray(customBanList);
+    let blackListString = GMC.getValue("bannedUsers", defaultBlackList);
+    let regexListString = GMC.getValue("bannedPatterns", defaultRegexList);
+
+    let blackList = userListToRegexArray(blackListString).concat(userListToArray(regexListString));
+
+    let customBlackListString = GMC.getValue("Vlastní filtr", "testovaci.kakes");
+    let customBlackList = userListToRegexArray(customBlackListString);
 
     let filteringEnabled = GMC.getValue("Schovávat", "true") == "true";
     let deletingEnabled = GMC.getValue("Mazat", "true") == "true";
@@ -275,17 +299,16 @@ function addPluginSettings(pluginNode)
 
     if (deletingEnabled)
     {
-        let array = customDeletingEnabled ? banArray.concat(customBanArray) : banArray;
+        let array = customDeletingEnabled ? blackList.concat(customBlackList) : blackList;
         deletePosts(array);
     }
     if (filteringEnabled)
     {
-        let array = banArray.concat(customBanArray)
-        stopImages(array);
-        hidePosts(array);
+        let array = blackList.concat(customBlackList);
+        hidePostsRegex(array);
     }
 
     addPluginSettings(getPluginWidgetNode());
 
-    updateBanList(false);
+    updateBlackList(false);
 })();
