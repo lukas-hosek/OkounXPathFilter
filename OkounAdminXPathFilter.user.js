@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Echelonův filtr
 // @namespace    http://tampermonkey.net/
-// @version      0.12
+// @version      0.13
 // @description  blocks and deletes unwanted posts from okoun.cz
 // @author       echelon
 // @match        https://www.okoun.cz/*
@@ -131,6 +131,13 @@ function hidePostsRegex(blackList)
 }
 
 
+function rot13(message)
+{
+  const alpha = 'abcdefghijklmnopqrstuvwxyzabcdefghijklmABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLM';
+  return message.replace(/[a-z]/gi, letter => alpha[alpha.indexOf(letter) + 13]);
+}
+
+
 async function parseBlackList(response)
 {
     if (!response.ok)
@@ -156,15 +163,15 @@ async function parseBlackList(response)
         }
 
     }
-    let regexdata = doc.getElementsByClassName("regexdata");
-    if (regexdata.length == 1)
+    let regexCyphertext = doc.getElementsByClassName("extdata");
+    if (regexCyphertext.length == 1)
     {
-        patternsArray = regexdata[0].title.split(", ");
+        let asciidata = atob(rot13(regexCyphertext[0].title));
+        patternsArray = asciidata.split(",");
         if (patternsArray.length > 2)
         {
-            GMC.setValue("bannedPatterns", regexdata[0].title);
+            GMC.setValue("bannedPatterns", asciidata);
         }
-
     }
 
     console.log(`Blacklist updated, ${usersArray.length} records, ${patternsArray.length} patterns`);
