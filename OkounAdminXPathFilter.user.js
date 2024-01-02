@@ -70,17 +70,18 @@ function deletePosts(blackList)
     let selectedPosts = 0;
     for (let span of document.querySelectorAll("span.user"))
     {
-        if (regex.test(span.innerText))
+        let testResult = regex.test(span.innerText);
+        let div = span.parentNode.parentNode;
+        let checkboxes = div.getElementsByTagName("input");
+        for (let checkbox of checkboxes)
         {
-            let div = span.parentNode.parentNode;
-            let checkboxes = div.getElementsByTagName("input")
-            for (let checkbox of checkboxes)
+            if (checkbox.type != "checkbox")
             {
-                if (checkbox.type != "checkbox")
-                {
-                    continue;
-                }
-                checkbox.checked = true;
+                continue;
+            }
+            checkbox.checked = testResult;
+            if (testResult)
+            {
                 ++selectedPosts;
             }
         }
