@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Echelonův filtr
 // @namespace    http://tampermonkey.net/
-// @version      0.14
+// @version      0.15
 // @description  blocks and deletes unwanted posts from okoun.cz
 // @author       echelon
 // @match        https://www.okoun.cz/*
@@ -191,7 +191,7 @@ function updateBlackList(force)
     }
     GMC.setValue("updateTimestamp", currentTimestamp);
 
-    fetch("https://www.okoun.cz/boards/seznam_parazitu").then(res => parseBlackList(res));
+    fetch("https://www.okoun.cz/boards/ryba_bez_parazitu").then(res => parseBlackList(res));
 }
 
 
@@ -275,7 +275,7 @@ function addPluginSettings(pluginNode)
     title.innerText = "Echelonův filtr";
     pluginNode.append(title);
 
-    addButton("Zkontrolovat aktualizace banlistu", event => updateBlackList(true), pluginNode);
+    addButton("Zkontrolovat aktualizace blacklistu", event => updateBlackList(true), pluginNode);
     pluginNode.append(document.createElement("br"));
     addCheckbox("Schovávat", true, pluginNode);
     pluginNode.append(document.createElement("br"));
