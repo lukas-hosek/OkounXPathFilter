@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Echelonův filtr
 // @namespace    http://tampermonkey.net/
-// @version      0.15
+// @version      0.16
 // @description  blocks and deletes unwanted posts from okoun.cz
 // @author       echelon
 // @match        https://www.okoun.cz/*
@@ -181,9 +181,15 @@ async function parseBlackList(response)
 
 function updateBlackList(force)
 {
-  	let updateTimestamp = parseInt(GMC.getValue("updateTimestamp", 0));
+  	// Skip if we're not logged in
+    if (document.getElementsByClassName("login").length > 0)
+    {
+        return;
+    }
+
+    let updateTimestamp = parseInt(GMC.getValue("updateTimestamp", 0));
     let currentTimestamp = Date.now();
-  	let updateInterval = 1 * 60 * 60 * 1000;
+  	let updateInterval = 30 * 60 * 1000;
     if (updateTimestamp + updateInterval > currentTimestamp && !force)
     {
         // List is sufficiently up to date
