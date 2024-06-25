@@ -278,7 +278,7 @@ function addButton(name, callback, pluginNode)
 function addPluginSettings(pluginNode)
 {
     let title = document.createElement("div");
-    title.innerText = "Echelonův filtr";
+    title.innerText = "Echelonův filtr " + GM_info.script.version;
     pluginNode.append(title);
 
     addButton("Zkontrolovat aktualizace blacklistu", event => updateBlackList(true), pluginNode);
