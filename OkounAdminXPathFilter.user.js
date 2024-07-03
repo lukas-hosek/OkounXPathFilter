@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Echelonův filtr
 // @namespace    http://tampermonkey.net/
-// @version      0.16
+// @version      0.16.1
 // @description  blocks and deletes unwanted posts from okoun.cz
 // @author       echelon
 // @match        https://www.okoun.cz/*
@@ -111,7 +111,7 @@ function deletePosts(blackList)
 }
 
 
-function hidePostsRegex(blackList)
+function hidePostsRegex(blackList, minimizeOnly)
 {
     let regexString = "(" + blackList.join("|")+")";
     let regex = new RegExp(regexString, "i");
@@ -126,7 +126,21 @@ function hidePostsRegex(blackList)
             {
                 img.src="";
             }
-            div.parentNode.removeChild(div);
+            if (minimizeOnly) {
+                div.style.height = '1.5em';
+                div.style.overflow = 'hidden';
+                div.style.border = '1px solid gray';
+                div.style.opacity = '0.5';
+                div.onclick = function () {
+                    if (div.style.height === '') {
+                        div.style.height = '2em';
+                    } else {
+                        div.style.height = '';
+                    }
+                }
+            } else {
+                div.parentNode.removeChild(div);
+            }
         }
     }
 }
@@ -285,6 +299,8 @@ function addPluginSettings(pluginNode)
     pluginNode.append(document.createElement("br"));
     addCheckbox("Schovávat", true, pluginNode);
     pluginNode.append(document.createElement("br"));
+    addCheckbox("Jen minimalizovat", true, pluginNode);
+    pluginNode.append(document.createElement("br"));
     addCheckbox("Mazat", true, pluginNode);
     pluginNode.append(document.createElement("br"));
     pluginNode.append(document.createTextNode("\xa0\xa0"));
@@ -308,6 +324,7 @@ function addPluginSettings(pluginNode)
     let customBlackList = userListToRegexArray(customBlackListString);
 
     let filteringEnabled = GMC.getValue("Schovávat", "true") == "true";
+    let minimizeOnly = GMC.getValue("Jen minimalizovat", "true") == "true";
     let deletingEnabled = GMC.getValue("Mazat", "true") == "true";
     let customDeletingEnabled = GMC.getValue("I z vlastního filtru ⚠️", "false") == "true";
 
@@ -319,7 +336,7 @@ function addPluginSettings(pluginNode)
     if (filteringEnabled)
     {
         let array = blackList.concat(customBlackList);
-        hidePostsRegex(array);
+        hidePostsRegex(array, minimizeOnly);
     }
 
     addPluginSettings(getPluginWidgetNode());
