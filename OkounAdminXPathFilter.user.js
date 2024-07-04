@@ -18,6 +18,24 @@
 const defaultBlackList = 'adijunkt, Bernhard_Weiss, bmn, Brandenburg, Bloodrot, Branimir, bretislav.jonas, d.smiricky, Dagobert_Durr, Das_Reich, florian_geyer, frantisek.kachna, Gotz_Berlichingen, Hajny_Filiburg, hamacek, Handschar, Hilfswilliger, horacek, Horst_Wessel, Charlemagne, Charlemagne_, Isidor, Januar, jarda.dusek, jasanek, Jurij_Ozerov, Kama, Karstjager, Koprovka, Knour, Kpt_Tuma, Landstorm_Netherland, Langemarck, Laser_eye, Lutzow, maqeo.cz, Maria_Theresia, mazurek, mazanej_lucifer, Mudrford, Neknubak, Nibelungen, Nord_, Norland, OberSturmKlippFurher, Oblazek, piANistka, Plch, Plsik_Liskovy, Polizei, pixicz, Prinz_Eugen, profesor_Birkermaier, Protez_alpska, prucha, ritna.diera, vojin.kouba, vonavka, Wallonien, Zufanek';
 const defaultRegexList = 'kouba$';
 
+// storage access
+function getStorageValue(key, defaultvalue) {
+    try {
+        return GMC.getValue(key, defaultvalue)
+    } catch { // fallback to local storage, for GMC does not seem to work in Stay/Safari, hell knows why
+        let val=unsafeWindow.localStorage.getItem('cz.ocs.EchelonScriptPrivateData.'+key) // unsafeWindow needed to fix opening new tabs, see thread https://www.okoun.cz/boards/ryba_bez_parazitu?rootId=1072120407#article-1072133489
+        if (val===null) val=defaultvalue
+        return val
+    }
+}
+function setStorageValue(key, value) {
+    try {
+        GMC.setValue(key, value)
+    } catch { // see above
+        unsafeWindow.localStorage.setItem('cz.ocs.EchelonScriptPrivateData.'+key, value)
+    }
+}
+
 // Plugin registration
 
 function togglePluginWidgetVisibility()
@@ -174,7 +192,7 @@ async function parseBlackList(response)
         usersArray = xdata[0].textContent.split(", ");
         if (usersArray.length > 2)
         {
-            GMC.setValue("bannedUsers", xdata[0].textContent);
+            setStorageValue("bannedUsers", xdata[0].textContent);
         }
 
     }
@@ -185,7 +203,7 @@ async function parseBlackList(response)
         patternsArray = asciidata.split(",");
         if (patternsArray.length > 2)
         {
-            GMC.setValue("bannedPatterns", asciidata);
+            setStorageValue("bannedPatterns", asciidata);
         }
     }
 
@@ -201,7 +219,7 @@ function updateBlackList(force)
         return;
     }
 
-    let updateTimestamp = parseInt(GMC.getValue("updateTimestamp", 0));
+    let updateTimestamp = parseInt(getStorageValue("updateTimestamp", 0));
     let currentTimestamp = Date.now();
   	let updateInterval = 30 * 60 * 1000;
     if (updateTimestamp + updateInterval > currentTimestamp && !force)
@@ -209,8 +227,9 @@ function updateBlackList(force)
         // List is sufficiently up to date
       return;
     }
-    GMC.setValue("updateTimestamp", currentTimestamp);
+    setStorageValue("updateTimestamp", currentTimestamp);
 
+    // wouldn't it be better to open "...?searchedStrings="? Compare https://www.okoun.cz/boards/jak_na_okouna?contextId=1072808500#article-1072808500 tho!
     fetch("https://www.okoun.cz/boards/ryba_bez_parazitu?contextId=1071957010#article-1071957010").then(res => parseBlackList(res));
 }
 
@@ -247,7 +266,7 @@ function userListToRegexArray(userList)
 
 function onCheckboxToggle(confName, value)
 {
-    GMC.setValue(confName, value ? "true" : "false");
+    setStorageValue(confName, value ? "true" : "false");
 }
 
 
@@ -255,7 +274,7 @@ function addCheckbox(name, defaultVal, pluginNode)
 {
     let checkBox = document.createElement("input");
     checkBox.type = "checkbox";
-    checkBox.checked = GMC.getValue(name, defaultVal ? "true" : "false") == "true";
+    checkBox.checked = getStorageValue(name, defaultVal ? "true" : "false") == "true";
     checkBox.addEventListener("change", event => onCheckboxToggle(name, event.target.checked));
     pluginNode.append(checkBox);
     pluginNode.append(document.createTextNode(name));
@@ -264,7 +283,7 @@ function addCheckbox(name, defaultVal, pluginNode)
 
 function onTextAreaChange(confName, value)
 {
-    GMC.setValue(confName, value);
+    setStorageValue(confName, value);
 }
 
 
@@ -273,7 +292,7 @@ function addTextArea(name, defaultVal, pluginNode)
     pluginNode.append(document.createTextNode(name));
     pluginNode.append(document.createElement("br"));
     let textArea = document.createElement("textarea");
-    textArea.value = GMC.getValue(name, defaultVal);
+    textArea.value = getStorageValue(name, defaultVal);
     textArea.addEventListener("change", event => onTextAreaChange(name, event.target.value));
     pluginNode.append(textArea);
 }
@@ -316,18 +335,18 @@ function addPluginSettings(pluginNode)
 (function() {
     'use strict';
 
-    let blackListString = GMC.getValue("bannedUsers", defaultBlackList);
-    let regexListString = GMC.getValue("bannedPatterns", defaultRegexList);
+    let blackListString = getStorageValue("bannedUsers", defaultBlackList);
+    let regexListString = getStorageValue("bannedPatterns", defaultRegexList);
 
     let blackList = userListToRegexArray(blackListString).concat(userListToArray(regexListString));
 
-    let customBlackListString = GMC.getValue("Vlastní filtr", "testovaci.kakes");
+    let customBlackListString = getStorageValue("Vlastní filtr", "testovaci.kakes");
     let customBlackList = userListToRegexArray(customBlackListString);
 
-    let filteringEnabled = GMC.getValue("Schovávat", "true") == "true";
-    let minimizeOnly = GMC.getValue("Jen minimalizovat", "true") == "true";
-    let deletingEnabled = GMC.getValue("Mazat", "true") == "true";
-    let customDeletingEnabled = GMC.getValue("I z vlastního filtru ⚠️", "false") == "true";
+    let filteringEnabled = getStorageValue("Schovávat", "true") == "true";
+    let minimizeOnly = getStorageValue("Jen minimalizovat", "true") == "true";
+    let deletingEnabled = getStorageValue("Mazat", "true") == "true";
+    let customDeletingEnabled = getStorageValue("I z vlastního filtru ⚠️", "false") == "true";
 
     if (deletingEnabled)
     {
