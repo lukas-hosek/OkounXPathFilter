@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Echelonův filtr
 // @namespace    http://tampermonkey.net/
-// @version      0.16.1
+// @version      0.17
 // @description  blocks and deletes unwanted posts from okoun.cz
 // @author       echelon
 // @match        https://www.okoun.cz/*
@@ -211,7 +211,7 @@ function updateBlackList(force)
     }
     GMC.setValue("updateTimestamp", currentTimestamp);
 
-    fetch("https://www.okoun.cz/boards/ryba_bez_parazitu").then(res => parseBlackList(res));
+    fetch("https://www.okoun.cz/boards/ryba_bez_parazitu?contextId=1071957010#article-1071957010").then(res => parseBlackList(res));
 }
 
 
@@ -299,7 +299,8 @@ function addPluginSettings(pluginNode)
     pluginNode.append(document.createElement("br"));
     addCheckbox("Schovávat", true, pluginNode);
     pluginNode.append(document.createElement("br"));
-    addCheckbox("Jen minimalizovat", true, pluginNode);
+    pluginNode.append(document.createTextNode("\xa0\xa0"));
+    addCheckbox("Jen minimalizovat", false, pluginNode);
     pluginNode.append(document.createElement("br"));
     addCheckbox("Mazat", true, pluginNode);
     pluginNode.append(document.createElement("br"));
