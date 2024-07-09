@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Echelonův filtr
 // @namespace    http://tampermonkey.net/
-// @version      0.17
+// @version      0.18
 // @description  blocks and deletes unwanted posts from okoun.cz
 // @author       echelon
 // @match        https://www.okoun.cz/*
@@ -325,7 +325,7 @@ function addPluginSettings(pluginNode)
     let customBlackList = userListToRegexArray(customBlackListString);
 
     let filteringEnabled = GMC.getValue("Schovávat", "true") == "true";
-    let minimizeOnly = GMC.getValue("Jen minimalizovat", "true") == "true";
+    let minimizeOnly = GMC.getValue("Jen minimalizovat", "false") == "true";
     let deletingEnabled = GMC.getValue("Mazat", "true") == "true";
     let customDeletingEnabled = GMC.getValue("I z vlastního filtru ⚠️", "false") == "true";
 
