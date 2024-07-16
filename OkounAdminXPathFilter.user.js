@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Echelonův filtr
 // @namespace    http://tampermonkey.net/
-// @version      0.19
+// @version      0.20
 // @description  blocks and deletes unwanted posts from okoun.cz
 // @author       echelon
 // @match        https://www.okoun.cz/*
@@ -331,6 +331,28 @@ function addPluginSettings(pluginNode)
 }
 
 
+function hideSidebar()
+{
+    let hideReqDiv = document.getElementsByClassName("HideSidebar");
+    if (hideReqDiv.length != 1)
+    {
+        return;
+    }
+    let sidebar = document.getElementsByClassName("yui-u ctx");
+    if (sidebar.length != 1)
+    {
+        return;
+    }
+    sidebar[0].parentNode.removeChild(sidebar[0]);
+    let mainDiv = document.getElementsByClassName("yui-u yui-ge first main");
+    if (mainDiv.length != 1)
+    {
+        return;
+    }
+    mainDiv[0].style.width = '100%';
+}
+
+
 
 (function() {
     'use strict';
@@ -358,6 +380,9 @@ function addPluginSettings(pluginNode)
         let array = blackList.concat(customBlackList);
         hidePostsRegex(array, minimizeOnly);
     }
+
+    console.log("Deleting");
+    hideSidebar();
 
     addPluginSettings(getPluginWidgetNode());
 
