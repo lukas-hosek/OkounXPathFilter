@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         Echelonův filtr
 // @namespace    http://tampermonkey.net/
-// @version      0.20
+// @version      0.21
 // @description  blocks and deletes unwanted posts from okoun.cz
 // @author       echelon
-// @match        https://www.okoun.cz/*
+// @match        https://*.okoun.cz/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=okoun.cz
 // @downloadURL  https://github.com/lukas-hosek/OkounXPathFilter/raw/main/OkounAdminXPathFilter.user.js
 // @updateURL    https://github.com/lukas-hosek/OkounXPathFilter/raw/main/OkounAdminXPathFilter.user.js
@@ -370,6 +370,8 @@ function hideSidebar()
     let deletingEnabled = getStorageValue("Mazat", "true") == "true";
     let customDeletingEnabled = getStorageValue("I z vlastního filtru ⚠️", "false") == "true";
 
+    hideSidebar();
+
     if (deletingEnabled)
     {
         let array = customDeletingEnabled ? blackList.concat(customBlackList) : blackList;
@@ -380,9 +382,6 @@ function hideSidebar()
         let array = blackList.concat(customBlackList);
         hidePostsRegex(array, minimizeOnly);
     }
-
-    console.log("Deleting");
-    hideSidebar();
 
     addPluginSettings(getPluginWidgetNode());
 
