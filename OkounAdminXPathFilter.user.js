@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Echelonův filtr
 // @namespace    http://tampermonkey.net/
-// @version      0.21
+// @version      0.22
 // @description  blocks and deletes unwanted posts from okoun.cz
 // @author       echelon
 // @match        https://*.okoun.cz/*
@@ -11,9 +11,14 @@
 // @run-at       document-end
 // @grant        GM_setValue
 // @grant        GM_getValue
-// @require      https://github.com/StigNygaard/GMCommonAPI.js/raw/master/GMCommonAPI.js
+// @grant        unsafeWindow
+// @require      https://github.com/StigNygaard/GMCommonAPI.js/raw/b1b872f8faa6be3f55ee5ba8015d1d991a5fda85/GMCommonAPI.js
 // ==/UserScript==
 
+
+// 1x1 transparent GIF. Assigning this to img.src aborts an in-progress image
+// download (e.g. a >100 MB image) without re-requesting the page like src="" would.
+const BLANK_IMAGE = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
 const defaultBlackList = 'adijunkt, Bernhard_Weiss, bmn, Brandenburg, Bloodrot, Branimir, bretislav.jonas, d.smiricky, Dagobert_Durr, Das_Reich, florian_geyer, frantisek.kachna, Gotz_Berlichingen, Hajny_Filiburg, hamacek, Handschar, Hilfswilliger, horacek, Horst_Wessel, Charlemagne, Charlemagne_, Isidor, Januar, jarda.dusek, jasanek, Jurij_Ozerov, Kama, Karstjager, Koprovka, Knour, Kpt_Tuma, Landstorm_Netherland, Langemarck, Laser_eye, Lutzow, maqeo.cz, Maria_Theresia, mazurek, mazanej_lucifer, Mudrford, Neknubak, Nibelungen, Nord_, Norland, OberSturmKlippFurher, Oblazek, piANistka, Plch, Plsik_Liskovy, Polizei, pixicz, Prinz_Eugen, profesor_Birkermaier, Protez_alpska, prucha, ritna.diera, vojin.kouba, vonavka, Wallonien, Zufanek';
 const defaultRegexList = 'kouba$';
@@ -66,7 +71,7 @@ function createPluginWidget()
     // Create the floating widget
     let pluginWidget = document.createElement("div");
     pluginWidget.id = "pluginWidget";
-    pluginWidget.style = "background-color:white; border: 2px solid black; padding: 10px; float:right; display:none;";
+    pluginWidget.style.cssText = "background-color:white; border: 2px solid black; padding: 10px; float:right; display:none;";
     separatorNode.parentNode.after(pluginWidget);
     return pluginWidget;
 }
@@ -80,10 +85,15 @@ function getPluginWidgetNode()
 
 // The filter code itself
 
+function buildRegex(blackList)
+{
+    return new RegExp("(" + blackList.join("|") + ")", "i");
+}
+
+
 function deletePosts(blackList)
 {
-    let regexString = "(" + blackList.join("|")+")";
-    let regex = new RegExp(regexString, "i");
+    let regex = buildRegex(blackList);
 
     let selectedPosts = 0;
     for (let span of document.querySelectorAll("span.user"))
@@ -131,8 +141,7 @@ function deletePosts(blackList)
 
 function hidePostsRegex(blackList, minimizeOnly)
 {
-    let regexString = "(" + blackList.join("|")+")";
-    let regex = new RegExp(regexString, "i");
+    let regex = buildRegex(blackList);
 
     for (let span of document.querySelectorAll("span.user"))
     {
@@ -142,7 +151,9 @@ function hidePostsRegex(blackList, minimizeOnly)
             let imgs = div.getElementsByTagName("img")
             for (let img of imgs)
             {
-                img.src="";
+                // Abort any in-progress image download before hiding/removing the post.
+                img.src = BLANK_IMAGE;
+                img.removeAttribute("srcset"); // src is ignored when srcset is present
             }
             if (minimizeOnly) {
                 div.style.height = '1.5em';
@@ -150,10 +161,10 @@ function hidePostsRegex(blackList, minimizeOnly)
                 div.style.border = '1px solid gray';
                 div.style.opacity = '0.5';
                 div.onclick = function () {
-                    if (div.style.height === '') {
-                        div.style.height = '2em';
-                    } else {
+                    if (div.style.height === '1.5em') {
                         div.style.height = '';
+                    } else {
+                        div.style.height = '1.5em';
                     }
                 }
             } else {
@@ -248,12 +259,18 @@ function userListToArray(userList)
 }
 
 
+function escapeRegex(str)
+{
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+
 function userListToRegexArray(userList)
 {
     if (userList.trim().length > 0)
     {
         let userArray = userList.split(",");
-        return userArray.map(str => "^" + str.trim().replace(".", "\.") + "$");
+        return userArray.map(str => "^" + escapeRegex(str.trim()) + "$");
     }
     else
     {
