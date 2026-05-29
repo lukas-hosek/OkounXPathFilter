@@ -50,6 +50,103 @@ function togglePluginWidgetVisibility()
 }
 
 
+function injectPluginStyles()
+{
+    let style = document.createElement("style");
+    style.textContent = `
+#pluginWidget {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 9999;
+    width: 320px;
+    box-sizing: border-box;
+    background: #fff;
+    border: 1px solid #b0b0b0;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    padding: 0 16px 14px 16px;
+    font: 13px/1.5 sans-serif;
+    color: #222;
+}
+#pluginWidget .pluginTitle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 -16px 12px -16px;
+    padding: 4px 6px 4px 14px;
+    background: #3b5070;
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    border-radius: 7px 7px 0 0;
+}
+#pluginWidget .pluginClose {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 4px;
+    background: transparent;
+    color: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0;
+}
+#pluginWidget .pluginClose:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+#pluginWidget label {
+    display: block;
+    margin: 4px 0;
+    cursor: pointer;
+}
+#pluginWidget label.indent {
+    margin-left: 20px;
+}
+#pluginWidget input[type="checkbox"] {
+    margin-right: 6px;
+    vertical-align: middle;
+}
+#pluginWidget button {
+    width: 100%;
+    padding: 6px 10px;
+    margin-bottom: 10px;
+    background: #f5f5f5;
+    border: 1px solid #b0b0b0;
+    border-radius: 4px;
+    cursor: pointer;
+    font: inherit;
+}
+#pluginWidget button:hover {
+    background: #e8e8e8;
+}
+#pluginWidget textarea {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 80px;
+    margin-top: 4px;
+    padding: 6px;
+    border: 1px solid #b0b0b0;
+    border-radius: 4px;
+    font: inherit;
+    resize: vertical;
+}
+#pluginWidget .fieldLabel {
+    display: block;
+    margin-top: 8px;
+    font-weight: bold;
+}
+`;
+    document.head.appendChild(style);
+}
+
+
 function createPluginWidget()
 {
     let xPath = "//div[@class='head']/div[@class='user']/a";
@@ -58,6 +155,8 @@ function createPluginWidget()
     {
         return null;
     }
+
+    injectPluginStyles();
 
     // Create "Pluginy" in page head
     let separatorNode = document.createTextNode(" | ");
@@ -68,11 +167,12 @@ function createPluginWidget()
     confToggleNode.innerText = "Pluginy";
     separatorNode.after(confToggleNode);
 
-    // Create the floating widget
+    // Create the floating widget. position:fixed (via CSS) keeps it out of the
+    // document flow so it overlays the page instead of expanding the layout.
     let pluginWidget = document.createElement("div");
     pluginWidget.id = "pluginWidget";
-    pluginWidget.style.cssText = "background-color:white; border: 2px solid black; padding: 10px; float:right; display:none;";
-    separatorNode.parentNode.after(pluginWidget);
+    pluginWidget.style.display = "none";
+    document.body.appendChild(pluginWidget);
     return pluginWidget;
 }
 
@@ -287,14 +387,20 @@ function onCheckboxToggle(confName, value)
 }
 
 
-function addCheckbox(name, defaultVal, pluginNode)
+function addCheckbox(name, defaultVal, pluginNode, indent)
 {
+    let label = document.createElement("label");
+    if (indent)
+    {
+        label.className = "indent";
+    }
     let checkBox = document.createElement("input");
     checkBox.type = "checkbox";
     checkBox.checked = getStorageValue(name, defaultVal ? "true" : "false") == "true";
     checkBox.addEventListener("change", event => onCheckboxToggle(name, event.target.checked));
-    pluginNode.append(checkBox);
-    pluginNode.append(document.createTextNode(name));
+    label.append(checkBox);
+    label.append(document.createTextNode(name));
+    pluginNode.append(label);
 }
 
 
@@ -306,8 +412,10 @@ function onTextAreaChange(confName, value)
 
 function addTextArea(name, defaultVal, pluginNode)
 {
-    pluginNode.append(document.createTextNode(name));
-    pluginNode.append(document.createElement("br"));
+    let fieldLabel = document.createElement("span");
+    fieldLabel.className = "fieldLabel";
+    fieldLabel.innerText = name;
+    pluginNode.append(fieldLabel);
     let textArea = document.createElement("textarea");
     textArea.value = getStorageValue(name, defaultVal);
     textArea.addEventListener("change", event => onTextAreaChange(name, event.target.value));
@@ -328,21 +436,26 @@ function addButton(name, callback, pluginNode)
 function addPluginSettings(pluginNode)
 {
     let title = document.createElement("div");
-    title.innerText = "Echelonův filtr " + GM_info.script.version;
+    title.className = "pluginTitle";
     pluginNode.append(title);
 
+    let titleText = document.createElement("span");
+    titleText.innerText = "Echelonův filtr " + GM_info.script.version;
+    title.append(titleText);
+
+    let closeButton = document.createElement("button");
+    closeButton.className = "pluginClose";
+    closeButton.type = "button";
+    closeButton.innerText = "✕";
+    closeButton.title = "Zavřít";
+    closeButton.addEventListener("click", togglePluginWidgetVisibility);
+    title.append(closeButton);
+
     addButton("Zkontrolovat aktualizace blacklistu", event => updateBlackList(true), pluginNode);
-    pluginNode.append(document.createElement("br"));
     addCheckbox("Schovávat", true, pluginNode);
-    pluginNode.append(document.createElement("br"));
-    pluginNode.append(document.createTextNode("\xa0\xa0"));
-    addCheckbox("Jen minimalizovat", false, pluginNode);
-    pluginNode.append(document.createElement("br"));
+    addCheckbox("Jen minimalizovat", false, pluginNode, true);
     addCheckbox("Mazat", true, pluginNode);
-    pluginNode.append(document.createElement("br"));
-    pluginNode.append(document.createTextNode("\xa0\xa0"));
-    addCheckbox("I z vlastního filtru ⚠️", false, pluginNode);
-    pluginNode.append(document.createElement("br"));
+    addCheckbox("I z vlastního filtru ⚠️", false, pluginNode, true);
 
     addTextArea("Vlastní filtr", "testovaci.kakes", pluginNode);
 }
