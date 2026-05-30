@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Echelonův filtr
 // @namespace    http://tampermonkey.net/
-// @version      0.22
+// @version      0.23
 // @description  blocks and deletes unwanted posts from okoun.cz
 // @author       echelon
 // @match        https://*.okoun.cz/*
@@ -187,7 +187,19 @@ function getPluginWidgetNode()
 
 function buildRegex(blackList)
 {
-    return new RegExp("(" + blackList.join("|") + ")", "i");
+    const matchNothing = /(?!)/;
+    if (blackList.length === 0)
+    {
+        // No patterns => match nothing, so we don't delete / hide everything.
+        return matchNothing;
+    }
+    let regex = new RegExp("(" + blackList.join("|") + ")", "i");
+    if (regex.test(""))
+    {
+        // Sanity check: if an empty string matches, something's terribly wrong.
+        return matchNothing;
+    }
+    return regex;
 }
 
 
@@ -345,12 +357,13 @@ function updateBlackList(force)
 }
 
 
-function userListToArray(userList)
+function patternListToRegexArray(patternList)
 {
-    if (userList.trim().length > 0)
+    if (patternList.trim().length > 0)
     {
-        let userArray = userList.split(",");
-        return userArray.map(str => str.trim());
+        let patternArray = patternList.split(",");
+        // Drop empty entries so a stray comma can't accidentally inject a pattern that matches everything
+        return patternArray.map(str => str.trim()).filter(str => str.length > 0);
     }
     else
     {
@@ -490,7 +503,7 @@ function hideSidebar()
     let blackListString = getStorageValue("bannedUsers", defaultBlackList);
     let regexListString = getStorageValue("bannedPatterns", defaultRegexList);
 
-    let blackList = userListToRegexArray(blackListString).concat(userListToArray(regexListString));
+    let blackList = userListToRegexArray(blackListString).concat(patternListToRegexArray(regexListString));
 
     let customBlackListString = getStorageValue("Vlastní filtr", "testovaci.kakes");
     let customBlackList = userListToRegexArray(customBlackListString);
